@@ -1,6 +1,7 @@
 #include "LearnModels.hpp"
 #include "GameState.hpp"
 #include "Features.hpp"
+#include "ProgressBar.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -85,6 +86,9 @@ namespace secret_hitler
         int N = (int)X.size(), d = (int)w.size();
         std::mt19937 rng(std::random_device{}());
         std::uniform_int_distribution<int> dist(0, N - 1);
+
+        auto startTime = std::chrono::steady_clock::now();
+
         int total = epochs * N, width = 50;
         for (int ep = 0; ep < epochs; ++ep)
             for (int it = 0; it < N; ++it)
@@ -97,11 +101,12 @@ namespace secret_hitler
                 for (int j = 0; j < d; ++j)
                     w[j] -= lr * err * X[idx][j];
                 b -= lr * err;
-                int step = ep * N + it + 1, pos = int(width * (double(step) / total));
-                std::cout << "\r[Training] [";
-                for (int k = 0; k < width; ++k)
-                    std::cout << (k < pos ? '=' : ' ');
-                std::cout << "] " << int(double(step) / total * 100) << "%" << std::flush;
+                int step = ep * N + it + 1;
+                printProgressBar("Training",
+                    step,
+                    total,
+                    width,
+                    startTime);
             }
         std::cout << "\n";
     }
@@ -133,11 +138,13 @@ namespace secret_hitler
                 Y_L.push_back(Y_enact[i]);
             }
         }
+
         int dim = X_enact.empty() ? 0 : X_enact[0].size();
         LR_w_enact_F.assign(dim, 0.0);
         LR_b_enact_F = 0.0;
         LR_w_enact_L.assign(dim, 0.0);
         LR_b_enact_L = 0.0;
+        
         if (!X_F.empty())
             trainLogRegSGD(X_F, Y_F, LR_w_enact_F, LR_b_enact_F, lr, epochs);
         if (!X_L.empty())

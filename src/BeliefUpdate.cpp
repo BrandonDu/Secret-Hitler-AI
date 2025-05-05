@@ -14,8 +14,8 @@ namespace secret_hitler
 
         if (a.type == ActionType::Vote)
         {
-            auto phiF = extractFeatures(s_before, j, Role::Fascist);
-            auto phiL = extractFeatures(s_before, j, Role::Liberal);
+            auto phiF = extractFeatures(s_before, B, j, Role::Fascist);
+            auto phiL = extractFeatures(s_before, B, j, Role::Liberal);
             double pF = computeVoteYesProb(phiF);
             double pL = computeVoteYesProb(phiL);
             double likeF = a.voteYes ? pF : (1 - pF);

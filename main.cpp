@@ -4,13 +4,14 @@
 #include "LearnModels.hpp"
 #include "BeliefUpdate.hpp"
 #include "Features.hpp"
+#include "ProgressBar.hpp"
 
 using namespace secret_hitler;
 
 int main()
 {
     std::mt19937 rng(std::random_device{}());
-    int voteDim = extractFeatures(GameState(rng), 0, Role::Liberal).size();
+    int voteDim = extractFeatures(GameState(rng), BeliefState(), 0, Role::Liberal).size();
     int enactDim = extractEnactFeatures(GameState(rng), 0).size();
 
     LR_w_yes.assign(voteDim, 0.0);
@@ -29,9 +30,10 @@ int main()
     std::vector<int> Y_enact;
     std::vector<Role> recordedRoles;
 
-    int rounds = 5, gamesPerRound = 200, epochs = 5;
+    int rounds = 5, gamesPerRound = 10, epochs = 5;
     double lr_rate = 0.01;
     int myIndex = 0;
+    constexpr int W = 50;
 
     for (int r = 0; r < rounds; ++r)
     {
@@ -40,21 +42,37 @@ int main()
         X_enact.clear();
         Y_enact.clear();
         recordedRoles.clear();
+        std::cout << "=== Round " << (r + 1)
+                  << ": Self-play (" << gamesPerRound << " games) ===" << std::endl;
 
-        selfPlayGen(gamesPerRound, myIndex, X_vote, Y_vote, X_enact, Y_enact, recordedRoles, rng);
+        selfPlayGen(r, gamesPerRound, myIndex, X_vote, Y_vote, X_enact, Y_enact, recordedRoles, rng);
 
+        std::cout << "--- Training vote model (SGD) ---\n";
         trainLogRegSGD(X_vote, Y_vote, LR_w_yes, LR_b_yes, lr_rate, epochs);
         saveWeights("weights.txt");
 
+        std::cout << "--- Training enact models ---\n";
         trainEnactModels(X_enact, Y_enact, recordedRoles, lr_rate, epochs);
         saveEnactWeights(
             "weights_enact_F.txt", LR_b_enact_F, LR_w_enact_F,
             "weights_enact_L.txt", LR_b_enact_L, LR_w_enact_L);
+        std::cout << std::endl;
     }
 
     int liberalWins = 0;
     ISMCTS tester(myIndex);
-    const int testGames = 1000;
+    constexpr int testGames = 1000;
+    constexpr int BAR_WIDTH = 50;
+
+    std::cout << "\n--- Testing trained models ---" << std::endl;
+    auto startTime = std::chrono::steady_clock::now();
+
+    printProgressBar("Testing",
+                     0,
+                     testGames,
+                     BAR_WIDTH,
+                     startTime);
+
     for (int g = 0; g < testGames; ++g)
     {
         GameState gs(rng);
@@ -77,7 +95,7 @@ int main()
                         acts.push_back(ac);
                 if (!acts.empty() && acts[0].type == ActionType::Vote)
                 {
-                    auto phi = extractFeatures(gs, actor, gs.getRoles()[actor]);
+                    auto phi = extractFeatures(gs, bs, actor, gs.getRoles()[actor]);
                     std::bernoulli_distribution bd(sigmoid(LR_b_yes + std::inner_product(LR_w_yes.begin(), LR_w_yes.end(), phi.begin(), 0.0)));
                     bool yes = bd(rng);
                     for (auto &ac : acts)
@@ -99,6 +117,11 @@ int main()
         }
         if (gs.getWinner() > 0)
             ++liberalWins;
+        printProgressBar("Testing",
+                         g + 1,
+                         testGames,
+                         BAR_WIDTH,
+                         startTime);
     }
     std::cout << "Liberal wins: " << liberalWins << "/" << testGames << std::endl;
     return 0;

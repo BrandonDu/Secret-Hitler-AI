@@ -1,5 +1,5 @@
 #include "Search.hpp"
-
+#include "ProgressBar.hpp"
 namespace secret_hitler
 {
 
@@ -75,7 +75,8 @@ namespace secret_hitler
 		return st;
 	}
 
-	void selfPlayGen(int games,
+	void selfPlayGen(int round, 
+					int games,
 					 int myPlayer,
 					 std::vector<std::vector<double>> &X_vote,
 					 std::vector<int> &Y_vote,
@@ -85,8 +86,9 @@ namespace secret_hitler
 					 std::mt19937 &rng)
 	{
 		ISMCTS mcts(myPlayer);
+		constexpr int BAR_WIDTH = 50;
+		auto startTime = std::chrono::steady_clock::now();
 
-		int width = 50;
 		for (int g = 0; g < games; ++g)
 		{
 			GameState gs(rng);
@@ -110,7 +112,7 @@ namespace secret_hitler
 							acts.push_back(ac);
 					if (!acts.empty() && acts[0].type == ActionType::Vote)
 					{
-						auto phi = extractFeatures(gs, actor, gs.getRoles()[actor]);
+						auto phi = extractFeatures(gs, bs, actor, gs.getRoles()[actor]);
 						double p = computeVoteYesProb(phi);
 						std::bernoulli_distribution bd(p);
 						bool yes = bd(rng);
@@ -131,7 +133,7 @@ namespace secret_hitler
 				{
 					if (a.type == ActionType::Vote)
 					{
-						auto phi = extractFeatures(before, actor, gs.getRoles()[actor]);
+						auto phi = extractFeatures(before, bs, actor, gs.getRoles()[actor]);
 						X_vote.push_back(phi);
 						Y_vote.push_back(a.voteYes ? 1 : 0);
 					}
@@ -148,31 +150,11 @@ namespace secret_hitler
 					updateBelief(bs, before, a);
 				gs.apply(a, rng);
 			}
-			const int W = 50;
-			float frac = float(g + 1) / games;
-			int totalSteps = 2 * W;
-			int pos2 = int(frac * totalSteps + 0.5f);
-
-			std::cout << '\r' << "[Self-play] [";
-			for (int i = 0; i < W; ++i)
-			{
-				int cellStart = 2 * i;
-				if (cellStart + 1 < pos2)
-				{
-					std::cout << '=';
-				}
-				else if (cellStart < pos2)
-				{
-					std::cout << '-';
-				}
-				else
-				{
-					std::cout << ' ';
-				}
-			}
-			std::cout
-				<< "] " << int(frac * 100) << '%'
-				<< std::flush;
+			printProgressBar("Self-play",
+				g + 1,      
+				games,     
+				BAR_WIDTH,
+				startTime);
 		}
 		std::cout << "\n";
 	}

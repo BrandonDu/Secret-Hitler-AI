@@ -72,7 +72,9 @@ namespace secret_hitler
             }
 
             GameState sim = state;
+            BeliefState simB = rootB;
             int result;
+            
             while (!sim.isTerminal())
             {
                 auto acts = sim.getLegalActions();
@@ -82,7 +84,7 @@ namespace secret_hitler
                     {
                         if (!sim.isAlive()[voter])
                             continue;
-                        auto phi = extractFeatures(sim, voter, sim.getRoles()[voter]);
+                        auto phi = extractFeatures(sim, simB, voter, sim.getRoles()[voter]);
                         double pYes = computeVoteYesProb(phi);
                         bool vote = std::bernoulli_distribution(pYes)(rng);
                         sim.apply(Action{ActionType::Vote, voter, -1, vote, -1}, rng);

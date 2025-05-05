@@ -1,9 +1,9 @@
 #include "Features.hpp"
-
+#include "BeliefState.hpp"
 namespace secret_hitler
 {
 
-	std::vector<double> extractFeatures(const GameState &s, int actor, Role r)
+	std::vector<double> extractFeatures(const GameState &s, const BeliefState &b, int actor, Role r)
 	{
 		std::vector<double> phi;
 		phi.push_back((r == Role::Fascist || r == Role::Hitler) ? 1.0 : 0.0);
@@ -11,7 +11,7 @@ namespace secret_hitler
 		phi.push_back(s.getEnactedFascist());
 		phi.push_back(s.getChaosTrack());
 		for (int i = 0; i < 5; ++i)
-			phi.push_back(i == actor ? 1.0 : 0.0);
+			phi.push_back(b.pF[i]);
 		return phi;
 	}
 
@@ -27,8 +27,6 @@ namespace secret_hitler
 		phi.push_back(s.getChaosTrack());
 
 		auto roles = s.getRoles();
-		phi.push_back((roles[actor] == Role::Fascist || roles[actor] == Role::Hitler) ? 1.0 : 0.0);
-
 		return phi;
 	}
 
