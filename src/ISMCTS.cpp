@@ -7,11 +7,11 @@
 #include "Features.hpp"
 #include "BeliefUpdate.hpp"
 
-#include <algorithm> 
-#include <cmath>     
-#include <numeric>   
-#include <random>   
-#include <limits>   
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <random>
+#include <limits>
 
 namespace secret_hitler
 {
@@ -74,20 +74,55 @@ namespace secret_hitler
             GameState sim = state;
             BeliefState simB = rootB;
             int result;
-            
+            auto roles = sim.getRoles();
+
             while (!sim.isTerminal())
             {
                 auto acts = sim.getLegalActions();
-                if (!acts.empty() && acts[0].type == ActionType::Vote)
+                if (acts[0].type == ActionType::Vote)
                 {
                     for (int voter = 0; voter < 5; ++voter)
                     {
                         if (!sim.isAlive()[voter])
                             continue;
-                        auto phi = extractFeatures(sim, simB, voter, sim.getRoles()[voter]);
-                        double pYes = computeVoteYesProb(phi);
+                        auto phi = extractVotingFeatures(sim, simB, voter);
+                        double pYes = computeVoteYesProb(phi, roles[voter]);
                         bool vote = std::bernoulli_distribution(pYes)(rng);
                         sim.apply(Action{ActionType::Vote, voter, -1, vote, -1}, rng);
+                    }
+                }
+                else if (acts[0].type == ActionType::Enact)
+                {
+
+                    std::vector<Action> enactActs;
+                    for (auto &ac : acts)
+                        if (ac.type == ActionType::Enact)
+                            enactActs.push_back(ac);
+                    auto actor = acts[0].actor;
+                    if (roles[actor] == Role::Liberal) {
+                        for (auto &ac : enactActs)
+                            if (sim.getDrawBuf()[ac.index] == Policy::Liberal) {
+                                sim.apply(ac, rng);
+                                continue;   
+                            }
+                
+                        sim.apply(enactActs[0], rng);
+                        continue;
+                    }
+                    
+                    auto phi = extractEnactFeatures(sim, actor);
+                    double pF = computeEnactFascistProb(phi, roles[actor]);
+
+                    bool chooseF = std::bernoulli_distribution(pF)(rng);
+
+                    for (auto &ac : enactActs)
+                    {
+                        Policy c = sim.getDrawBuf()[ac.index];
+                        if ((c == Policy::Fascist) == chooseF)
+                        {
+                            sim.apply(ac, rng);
+                            break;
+                        }
                     }
                 }
                 else
@@ -97,8 +132,7 @@ namespace secret_hitler
                 }
             }
             result = sim.getWinner();
-
-            double perspective = (rootB.pF[m_myPlayer] < 0.5 ? +1.0 : -1.0);
+            double perspective = (roles[m_myPlayer] == Role::Liberal ? +1.0 : -1.0);
             for (Node *n = node; n != nullptr; n = n->parent)
             {
                 n->visits++;

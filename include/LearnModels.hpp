@@ -5,20 +5,18 @@
 namespace secret_hitler
 {
 
-    extern std::vector<double> LR_w_yes;
-    extern double LR_b_yes;
+    extern std::vector<double> LR_w_vote_F, LR_w_vote_L;
+    extern double LR_b_vote_F, LR_b_vote_L;
 
     extern std::vector<double> LR_w_enact_F;
-    extern std::vector<double> LR_w_enact_L;
     extern double LR_b_enact_F;
-    extern double LR_b_enact_L;
 
-    void loadWeights(const std::string &f);
-    void saveWeights(const std::string &f);
+    void loadVoteWeights(const std::string &fF, const std::string &fL);
+    void saveVoteWeights(const std::string &fF, const std::string &fL);
     void loadEnactWeights(const std::string &fF, const std::string &fL);
     void saveEnactWeights(
-        const std::string &fF, double bF, const std::vector<double> &wF,
-        const std::string &fL, double bL, const std::vector<double> &wL);
+        const std::string &fF,
+        const std::string &fL);
 
     void trainLogRegSGD(const std::vector<std::vector<double>> &X,
                         const std::vector<int> &Y,

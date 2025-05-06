@@ -10,33 +10,47 @@
 namespace secret_hitler
 {
 
-    std::vector<double> LR_w_yes;
-    double LR_b_yes = 0.0;
+    std::vector<double> LR_w_vote_F, LR_w_vote_L;
+    double LR_b_vote_F = 0.0, LR_b_vote_L = 0.0;
 
-    std::vector<double> LR_w_enact_F;
-    std::vector<double> LR_w_enact_L;
-    double LR_b_enact_F = 0.0;
-    double LR_b_enact_L = 0.0;
+    std::vector<double> LR_w_enact_F, LR_w_enact_L;
+    double LR_b_enact_F = 0.0, LR_b_enact_L = 0.0;
 
-    void loadWeights(const std::string &f)
+    void loadVoteWeights(const std::string &fF, const std::string &fL)
     {
-        std::ifstream in(f);
-        if (!in)
+        std::ifstream inF(fF), inL(fL);
+        if (!inF || !inL)
+        {
+            std::cerr << "Warning: vote weight files not found, starting from zeros\n";
             return;
-        in >> LR_b_yes;
-        for (auto &w : LR_w_yes)
-            in >> w;
+        }
+        inF >> LR_b_vote_F;
+        for (auto &w : LR_w_vote_F)
+            inF >> w;
+        inL >> LR_b_vote_L;
+        for (auto &w : LR_w_vote_L)
+            inL >> w;
     }
 
-    void saveWeights(const std::string &f)
+    void saveVoteWeights(
+        const std::string &fF,
+        const std::string &fL)
     {
-        std::ofstream out(f);
-        if (!out)
-            return;
-        out << LR_b_yes;
-        for (auto &w : LR_w_yes)
-            out << ' ' << w;
-        out << "\n";
+        std::ofstream outF(fF), outL(fL);
+        if (outF)
+        {
+            outF << LR_b_vote_F;
+            for (auto &w : LR_w_vote_F)
+                outF << ' ' << w;
+            outF << '\n';
+        }
+        if (outL)
+        {
+            outL << LR_b_vote_L;
+            for (auto &w : LR_w_vote_L)
+                outL << ' ' << w;
+            outL << '\n';
+        }
     }
 
     void loadEnactWeights(const std::string &fF, const std::string &fL)
@@ -56,21 +70,21 @@ namespace secret_hitler
     }
 
     void saveEnactWeights(
-        const std::string &fF, double bF, const std::vector<double> &wF,
-        const std::string &fL, double bL, const std::vector<double> &wL)
+        const std::string &fF,
+        const std::string &fL)
     {
         std::ofstream outF(fF), outL(fL);
         if (outF)
         {
-            outF << bF;
-            for (auto &w : wF)
+            outF << LR_b_enact_F;
+            for (auto &w : LR_w_enact_F)
                 outF << ' ' << w;
             outF << '\n';
         }
         if (outL)
         {
-            outL << bL;
-            for (auto &w : wL)
+            outL << LR_b_enact_L;
+            for (auto &w : LR_w_enact_L)
                 outL << ' ' << w;
             outL << '\n';
         }
@@ -103,10 +117,10 @@ namespace secret_hitler
                 b -= lr * err;
                 int step = ep * N + it + 1;
                 printProgressBar("Training",
-                    step,
-                    total,
-                    width,
-                    startTime);
+                                 step,
+                                 total,
+                                 width,
+                                 startTime);
             }
         std::cout << "\n";
     }
@@ -139,12 +153,6 @@ namespace secret_hitler
             }
         }
 
-        int dim = X_enact.empty() ? 0 : X_enact[0].size();
-        LR_w_enact_F.assign(dim, 0.0);
-        LR_b_enact_F = 0.0;
-        LR_w_enact_L.assign(dim, 0.0);
-        LR_b_enact_L = 0.0;
-        
         if (!X_F.empty())
             trainLogRegSGD(X_F, Y_F, LR_w_enact_F, LR_b_enact_F, lr, epochs);
         if (!X_L.empty())

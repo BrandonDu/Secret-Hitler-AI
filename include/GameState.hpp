@@ -62,6 +62,13 @@ namespace secret_hitler
         const std::array<Role, 5> &getRoles() const { return m_roles; }
         const std::array<bool, 5> &isAlive() const { return m_alive; }
 
+        int getNextPresident() const { return m_nextPresident; }
+        int getNominee() const { return m_nominee; }
+
+        void setRoles(const std::array<Role,5> &newRoles) {
+            m_roles = newRoles;
+          }
+        
         std::vector<Action> getLegalActions() const;
         void apply(const Action &a, std::mt19937 &rng);
     };
