@@ -7,8 +7,8 @@ namespace secret_hitler
 
     GameState::GameState(std::mt19937 &rng)
     {
-        std::array<Role, 5> r = {Role::Hitler, Role::Fascist, Role::Liberal, Role::Liberal, Role::Liberal};
-        std::shuffle(r.begin(), r.end(), rng);
+        std::array<Role, 5> r = {Role::Liberal, Role::Liberal, Role::Liberal, Role::Hitler, Role::Fascist};
+//        std::shuffle(r.begin(), r.end(), rng);
         m_roles = r;
 
         std::vector<Policy> tmp;
@@ -179,7 +179,7 @@ namespace secret_hitler
                         if (v.second)
                             ++yes;
 
-                    if (yes >= 3)
+                    if (yes >= (double) (aliveCount + 1) / 2)
                     {
                         m_lastChancellor = m_nominee;
                         if (m_enactedFascist >= 3 && m_roles[m_nominee] == Role::Hitler)

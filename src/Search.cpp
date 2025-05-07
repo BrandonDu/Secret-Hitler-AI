@@ -195,6 +195,28 @@ namespace secret_hitler
 							}
 						}
 					}
+                    else if (acts[0].type == ActionType::DrawDiscard) {
+                        auto drawBuf = before.getDrawBuf();
+                        bool discarded = false;
+                        if (roles[actor] == Role::Liberal) {
+                            for (auto &ac : acts)
+                                if (drawBuf[ac.index] == Policy::Liberal) {
+                                    discarded = true;
+                                    a = ac;
+                                    break;
+                                }
+                            if (!discarded)  a = acts[0];
+                        }
+                        else {
+                            for (auto &ac : acts)
+                                if (drawBuf[ac.index] == Policy::Fascist) {
+                                    discarded = true;
+                                    a = ac;
+                                    break;
+                                }
+                            if (!discarded) a = acts[0];
+                        }
+                    }
 					else
 					{
 						std::uniform_int_distribution<int> ud(0, (int)leg.size() - 1);

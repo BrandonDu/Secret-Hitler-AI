@@ -1,5 +1,4 @@
 #pragma once
-
 namespace secret_hitler
 {
 
@@ -24,7 +23,7 @@ namespace secret_hitler
 		Execute
 	};
 
-	struct Action
+    struct Action
 	{
 		ActionType type;
 		int actor;
@@ -32,5 +31,6 @@ namespace secret_hitler
 		bool voteYes;
 		int index;
 	};
+
 
 }
