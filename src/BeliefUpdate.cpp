@@ -39,7 +39,7 @@ namespace secret_hitler
             }
             else if (a.type == ActionType::Enact)
             {
-                auto phi = extractEnactFeatures(s_before, a.actor);
+                auto phi = extractEnactFeatures(s_before);
                 bool choseF = (s_before.getDrawBuf()[a.index] == Policy::Fascist);
                 double pEn = computeEnactFascistProb(phi, sim.getRoles()[a.actor]);
                 like = choseF ? pEn : (1.0 - pEn);

@@ -88,15 +88,19 @@ namespace secret_hitler
 			}
 		}
 		auto roles = st.getRoles();
+
 		for (int i : unk)
 			roles[i] = Role::Liberal;
+
 		roles[assigns[chosen].hitler] = Role::Hitler;
 		roles[assigns[chosen].fascist] = Role::Fascist;
+
+		for (int seat = 0; seat < 5; ++seat)
+			st.setRole(seat, roles[seat]);
 		return st;
 	}
 
-	void selfPlayGen(int round,
-					 int games,
+	void selfPlayGen(int games,
 					 int myPlayer,
 					 std::vector<std::vector<double>> &X_vote,
 					 std::vector<int> &Y_vote,
@@ -179,7 +183,7 @@ namespace secret_hitler
 						}
 						else
 						{
-							auto phi = extractEnactFeatures(before, actor);
+							auto phi = extractEnactFeatures(before);
 							double pF = computeEnactFascistProb(phi, gs.getRoles()[actor]);
 
 							bool chooseF = std::bernoulli_distribution(pF)(rng);
@@ -195,28 +199,35 @@ namespace secret_hitler
 							}
 						}
 					}
-                    else if (acts[0].type == ActionType::DrawDiscard) {
-                        auto drawBuf = before.getDrawBuf();
-                        bool discarded = false;
-                        if (roles[actor] == Role::Liberal) {
-                            for (auto &ac : acts)
-                                if (drawBuf[ac.index] == Policy::Liberal) {
-                                    discarded = true;
-                                    a = ac;
-                                    break;
-                                }
-                            if (!discarded)  a = acts[0];
-                        }
-                        else {
-                            for (auto &ac : acts)
-                                if (drawBuf[ac.index] == Policy::Fascist) {
-                                    discarded = true;
-                                    a = ac;
-                                    break;
-                                }
-                            if (!discarded) a = acts[0];
-                        }
-                    }
+					else if (acts[0].type == ActionType::DrawDiscard)
+					{
+						auto drawBuf = before.getDrawBuf();
+						bool discarded = false;
+						if (roles[actor] == Role::Liberal)
+						{
+							for (auto &ac : acts)
+								if (drawBuf[ac.index] == Policy::Liberal)
+								{
+									discarded = true;
+									a = ac;
+									break;
+								}
+							if (!discarded)
+								a = acts[0];
+						}
+						else
+						{
+							for (auto &ac : acts)
+								if (drawBuf[ac.index] == Policy::Fascist)
+								{
+									discarded = true;
+									a = ac;
+									break;
+								}
+							if (!discarded)
+								a = acts[0];
+						}
+					}
 					else
 					{
 						std::uniform_int_distribution<int> ud(0, (int)leg.size() - 1);
@@ -233,7 +244,7 @@ namespace secret_hitler
 					}
 					else if (a.type == ActionType::Enact)
 					{
-						auto phi = extractEnactFeatures(before, actor);
+						auto phi = extractEnactFeatures(before);
 						X_enact.push_back(phi);
 						Policy chosen = before.getDrawBuf()[a.index];
 						Y_enact.push_back(chosen == Policy::Fascist ? 1 : 0);

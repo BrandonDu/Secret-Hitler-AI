@@ -4,7 +4,6 @@
 
 namespace secret_hitler
 {
-
     extern std::vector<double> LR_w_vote_F, LR_w_vote_L;
     extern double LR_b_vote_F, LR_b_vote_L;
 
@@ -13,7 +12,7 @@ namespace secret_hitler
 
     void loadVoteWeights(const std::string &fF, const std::string &fL);
     void saveVoteWeights(const std::string &fF, const std::string &fL);
-    void loadEnactWeights(const std::string &fF, const std::string &fL);
+    void loadEnactWeights(const std::string &fF);
     void saveEnactWeights(
         const std::string &fF,
         const std::string &fL);

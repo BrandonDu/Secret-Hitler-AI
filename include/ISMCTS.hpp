@@ -34,7 +34,11 @@ namespace secret_hitler
 
     public:
         explicit ISMCTS(int me, double c = 1.414);
+        ISMCTS(const ISMCTS &) = delete;
+        ISMCTS &operator=(const ISMCTS &) = delete;
 
+        ISMCTS(ISMCTS &&) noexcept = default;
+        ISMCTS &operator=(ISMCTS &&) noexcept = default;
         ~ISMCTS() = default;
 
         Action run(const GameState &rootSt,

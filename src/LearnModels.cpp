@@ -13,8 +13,8 @@ namespace secret_hitler
     std::vector<double> LR_w_vote_F, LR_w_vote_L;
     double LR_b_vote_F = 0.0, LR_b_vote_L = 0.0;
 
-    std::vector<double> LR_w_enact_F, LR_w_enact_L;
-    double LR_b_enact_F = 0.0, LR_b_enact_L = 0.0;
+    std::vector<double> LR_w_enact_F;
+    double LR_b_enact_F = 0.0;
 
     void loadVoteWeights(const std::string &fF, const std::string &fL)
     {
@@ -53,10 +53,10 @@ namespace secret_hitler
         }
     }
 
-    void loadEnactWeights(const std::string &fF, const std::string &fL)
+    void loadEnactWeights(const std::string &fF)
     {
-        std::ifstream inF(fF), inL(fL);
-        if (!inF || !inL)
+        std::ifstream inF(fF);
+        if (!inF)
         {
             std::cerr << "Warning: enact weight files not found, starting from zeros\n";
             return;
@@ -64,9 +64,6 @@ namespace secret_hitler
         inF >> LR_b_enact_F;
         for (auto &w : LR_w_enact_F)
             inF >> w;
-        inL >> LR_b_enact_L;
-        for (auto &w : LR_w_enact_L)
-            inL >> w;
     }
 
     void saveEnactWeights(
@@ -80,13 +77,6 @@ namespace secret_hitler
             for (auto &w : LR_w_enact_F)
                 outF << ' ' << w;
             outF << '\n';
-        }
-        if (outL)
-        {
-            outL << LR_b_enact_L;
-            for (auto &w : LR_w_enact_L)
-                outL << ' ' << w;
-            outL << '\n';
         }
     }
 
@@ -155,8 +145,6 @@ namespace secret_hitler
 
         if (!X_F.empty())
             trainLogRegSGD(X_F, Y_F, LR_w_enact_F, LR_b_enact_F, lr, epochs);
-        if (!X_L.empty())
-            trainLogRegSGD(X_L, Y_L, LR_w_enact_L, LR_b_enact_L, lr, epochs);
     }
 
 }

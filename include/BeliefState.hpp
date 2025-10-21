@@ -2,8 +2,6 @@
 
 #include <array>
 
-
-
 namespace secret_hitler
 {
     struct Assign {

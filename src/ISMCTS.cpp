@@ -96,65 +96,79 @@ namespace secret_hitler
 
                     auto actor = acts[0].actor;
                     bool enacted = false;
-                    if (roles[actor] == Role::Liberal) {
+                    if (roles[actor] == Role::Liberal)
+                    {
                         for (auto &ac : acts)
-                            if (sim.getDrawBuf()[ac.index] == Policy::Liberal) {
+                            if (sim.getDrawBuf()[ac.index] == Policy::Liberal)
+                            {
                                 sim.apply(ac, rng);
                                 enacted = true;
                                 break;
                             }
-                        if (!enacted) {
+                        if (!enacted)
+                        {
                             sim.apply(acts[0], rng);
                         }
                         continue;
                     }
-                    else {
+                    else
+                    {
                         bool enacted = false;
                         for (auto &ac : acts)
-                            if (sim.getDrawBuf()[ac.index] == Policy::Fascist) {
+                            if (sim.getDrawBuf()[ac.index] == Policy::Fascist)
+                            {
                                 sim.apply(ac, rng);
-                                continue;
+                                enacted = true;
+                                break;
                             }
-                        if (!enacted) {
+                        if (!enacted)
+                        {
                             sim.apply(acts[0], rng);
                         }
                         continue;
                     }
-//                    auto phi = extractEnactFeatures(sim, actor);
-//                    double pF = computeEnactFascistProb(phi, roles[actor]);
-//
-//                    bool chooseF = std::bernoulli_distribution(pF)(rng);
-//
-//                    for (auto &ac : enactActs)
-//                    {
-//                        Policy c = sim.getDrawBuf()[ac.index];
-//                        if ((c == Policy::Fascist) == chooseF)
-//                        {
-//                            sim.apply(ac, rng);
-//                            break;
-//                        }
-//                    }
+                    auto phi = extractEnactFeatures(sim);
+                    double pF = computeEnactFascistProb(phi, roles[actor]);
+
+                    bool chooseF = std::bernoulli_distribution(pF)(rng);
+
+                    for (auto &ac : acts)
+                    {
+                        Policy c = sim.getDrawBuf()[ac.index];
+                        if ((c == Policy::Fascist) == chooseF)
+                        {
+                            sim.apply(ac, rng);
+                            break;
+                        }
+                    }
                 }
-                else if (acts[0].type == ActionType::DrawDiscard) {
+                else if (acts[0].type == ActionType::DrawDiscard)
+                {
                     auto actor = acts[0].actor;
                     bool discarded = false;
-                    if (roles[actor] == Role::Liberal) {
+                    if (roles[actor] == Role::Liberal)
+                    {
                         for (auto &ac : acts)
-                            if (sim.getDrawBuf()[ac.index] == Policy::Fascist) {
+                            if (sim.getDrawBuf()[ac.index] == Policy::Fascist)
+                            {
                                 sim.apply(ac, rng);
                                 discarded = true;
                                 break;
                             }
-                        if (!discarded) sim.apply(acts[0], rng);
+                        if (!discarded)
+                            sim.apply(acts[0], rng);
                     }
-                    else {
+                    else
+                    {
                         for (auto &ac : acts)
-                            if (sim.getDrawBuf()[ac.index] == Policy::Liberal) {
+                            if (sim.getDrawBuf()[ac.index] == Policy::Liberal)
+                            {
                                 sim.apply(ac, rng);
                                 discarded = true;
                                 break;
                             }
-                        if (!discarded) sim.apply(acts[0], rng);
+                        if (!discarded)
+                            sim.apply(acts[0], rng);
                     }
                 }
                 else
