@@ -9,37 +9,32 @@
 #include <sstream>
 #include <chrono>
 
-
-
-void printProgressBar(const std::string&    prefix,
-    int                   current,
-    int                   total,
-    int                   width,
-    const std::chrono::steady_clock::time_point& startTime)
+void printProgressBar(const std::string &prefix,
+                      int current,
+                      int total,
+                      int width,
+                      const std::chrono::steady_clock::time_point &startTime)
 {
-    if (total <= 0) total = 1;
-    double units   = double(current) / total * width;
-    int    full    = int(std::floor(units));         
-    bool   half    = (units - full) >= 0.5;        
+    static size_t maxLen = 0;
+    std::ostringstream oss;
+    float ratio = float(current) / total;
+    int filled = int(ratio * width);
 
+    oss << "[" << prefix << "] [";
+    for (int i = 0; i < width; ++i)
+        oss << (i < filled ? '=' : ' ');
+    oss << "] " << std::setw(3) << int(ratio * 100) << "%  ETA: ";
 
-    auto now       = std::chrono::steady_clock::now();
-    auto elapsed_s = std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count();
-    int  remaining = int(elapsed_s * (total - current) / std::max(1, current));
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count();
+    int remaining = int((elapsed / ratio) - elapsed);
+    oss << remaining << "s";
+
+    std::string out = oss.str();
+    maxLen = std::max(maxLen, out.size());
 
     std::cout << '\r'
-              << "[" << prefix << "] [";
-    for (int i = 0; i < width; ++i)
-    {
-        if (i < full) 
-            std::cout << '=';
-        else if (i == full && half)
-            std::cout << '-';
-        else
-            std::cout << ' ';
-    }
-    std::cout << "] "
-              << std::setw(3) << int(double(current)/total * 100) << "%  "
-              << "ETA: " << remaining << "s"
+              << out
+              << std::string(maxLen - out.size(), ' ')
               << std::flush;
 }

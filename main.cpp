@@ -5,128 +5,73 @@
 #include "BeliefUpdate.hpp"
 #include "Features.hpp"
 #include "ProgressBar.hpp"
+#include "Bots.hpp"
+#include "Test.hpp"
 
 using namespace secret_hitler;
 
-int main()
-{
-    std::mt19937 rng(std::random_device{}());
-    int voteDim = extractVotingFeatures(GameState(rng), BeliefState(), 0).size();
-    int enactDim = extractEnactFeatures(GameState(rng), 0).size();
+int main(int argc, char* argv[]) {
+    std::string mode;
 
-    LR_w_vote_F.assign(voteDim, 0.0);
-    LR_b_vote_F = 0.0;
-    LR_w_vote_L.assign(voteDim, 0.0);
-    LR_b_vote_L = 0.0;
+    int numRounds=0, numGamesPerRound=0, numEpochs=0, numTestingGames=0;
 
-    loadVoteWeights("weights_vote_L.txt", "weights_vote_F.txt");
+    int evalGames=0, mctsIters=0;
+    std::vector<std::string> opponents;
 
-    LR_w_enact_F.assign(enactDim, 0.0);
-    LR_b_enact_F = 0.0;
-
-    loadEnactWeights("weights_enact_F.txt", "weights_enact_L.txt");
-
-    std::vector<std::vector<double>> X_vote;
-    std::vector<int> Y_vote;
-    std::vector<std::vector<double>> X_enact;
-    std::vector<int> Y_enact;
-    std::vector<Role> recordedRoles;
-
-    int rounds = 30, gamesPerRound = 1000, epochs = 5;
-    double lr_rate = 0.02;
-    int myIndex = 0;
-    constexpr int W = 50;
-
-    for (int r = 0; r < rounds; ++r)
-    {
-        X_vote.clear();
-        Y_vote.clear();
-        X_enact.clear();
-        Y_enact.clear();
-        recordedRoles.clear();
-        std::cout << "=== Round " << (r + 1)
-                  << ": Self-play (" << gamesPerRound << " games) ===" << std::endl;
-
-        selfPlayGen(r, gamesPerRound, myIndex, X_vote, Y_vote, X_enact, Y_enact, recordedRoles, rng);
-
-
-        std::vector<std::vector<double>> X_L, X_F;
-        std::vector<int>                 Y_L, Y_F;
-        X_L.reserve(X_vote.size());
-        X_F.reserve(X_vote.size());
-        Y_L.reserve(Y_vote.size());
-        Y_F.reserve(Y_vote.size());
-        for (size_t i = 0; i < X_vote.size(); ++i) {
-            if (recordedRoles[i] == Role::Liberal) {
-                X_L.push_back(X_vote[i]);
-                Y_L.push_back(Y_vote[i]);
-            } else {
-                X_F.push_back(X_vote[i]);
-                Y_F.push_back(Y_vote[i]);
-            }
+    for(int i=1;i<argc;++i){
+        std::string a=argv[i];
+        if(a=="--mode" && i+1<argc)       mode=argv[++i];
+        else if(a=="--rounds"&&i+1<argc)  numRounds        =std::stoi(argv[++i]);
+        else if(a=="--games-per-round"&&i+1<argc) numGamesPerRound=std::stoi(argv[++i]);
+        else if(a=="--epochs"&&i+1<argc)  numEpochs        =std::stoi(argv[++i]);
+        else if(a=="--test-games"&&i+1<argc) numTestingGames =std::stoi(argv[++i]);
+        else if(a=="--games"&&i+1<argc)   evalGames        =std::stoi(argv[++i]);
+        else if(a=="--iters"&&i+1<argc)   mctsIters       =std::stoi(argv[++i]);
+        else if(a=="--opponent"&&i+1<argc){
+            while(i+1<argc && argv[i+1][0]!='-')
+                opponents.emplace_back(argv[++i]);
         }
-
-        std::cout << "--- Training vote model (SGD) ---\n";
-        trainLogRegSGD(X_L, Y_L, LR_w_vote_L, LR_b_vote_L, lr_rate, epochs);
-        trainLogRegSGD(X_F, Y_F, LR_w_vote_F, LR_b_vote_F, lr_rate, epochs);
-        saveVoteWeights("weights_vote_L.txt",
-                        "weights_vote_F.txt");
-
-        std::cout << "--- Training enact models ---\n";
-        trainEnactModels(X_enact, Y_enact, recordedRoles, lr_rate, epochs);
-        saveEnactWeights(
-            "weights_enact_F.txt",
-            "weights_enact_L.txt");
-        std::cout << std::endl;
+        else {
+            std::cerr<<"Unknown flag "<<a<<"\n";
+            return 1;
+        }
     }
 
-    int liberalWins = 0;
-    ISMCTS tester(myIndex);
-    constexpr int testGames = 1000;
-    constexpr int BAR_WIDTH = 50;
-
-    std::cout << "\n--- Testing trained models ---" << std::endl;
-    auto startTime = std::chrono::steady_clock::now();
-
-    printProgressBar("Testing",
-                     0,
-                     testGames,
-                     BAR_WIDTH,
-                     startTime);
-
-    for (int g = 0; g < testGames; ++g)
-    {
-        GameState gs(rng);
-        std::array<ISMCTS,5> bots = {
-            ISMCTS(0), ISMCTS(1), ISMCTS(2), ISMCTS(3), ISMCTS(4)
-        };
-        std::array<BeliefState,5> beliefs;
-        
-        for (int i = 0; i < 5; ++i) {
-            initBeliefs(gs, beliefs[i], i);
+    if(mode=="train"){
+        if(numRounds<=0||numGamesPerRound<=0||numEpochs<=0||numTestingGames<=0){
+            std::cerr<<"Usage (train): --mode train "
+                     "--rounds N --games-per-round M --epochs E --test-games T\n";
+            return 1;
         }
-        
-        while (!gs.isTerminal()) {
-            auto leg = gs.getLegalActions();
-            int actor = leg.front().actor;
-            Action a;
-
-            a = bots[actor].run(gs, beliefs[actor], rng, 1000);
-        
-            for (int i = 0; i < 5; ++i) {
-            if (leg.front().type == ActionType::Vote || leg.front().type == ActionType::Enact)
-                updateBelief(beliefs[i], gs, a);
-            }
-            gs.apply(a, rng);
-        }
-        if (gs.getWinner() > 0)
-            ++liberalWins;
-        printProgressBar("Testing",
-                         g + 1,
-                         testGames,
-                         BAR_WIDTH,
-                         startTime);
+        std::cout<<"[TRAIN] Rnds="<<numRounds
+                 <<" G/Rnd="<<numGamesPerRound
+                 <<" Epochs="<<numEpochs
+                 <<" TestG="<<numTestingGames<<"\n";
+        trainTest(numRounds, numGamesPerRound, numEpochs, numTestingGames);
     }
-    std::cout << "\nLiberal wins: " << liberalWins << "/" << testGames << std::endl;
+    else if(mode=="evaluate"){
+        if(evalGames<=0||mctsIters<=0||opponents.empty()){
+            std::cerr<<"Usage (evaluate): --mode evaluate "
+                     "--games N --iters X --opponent name1 name2\n";
+            return 1;
+        }
+        for(auto &opp:opponents){
+            MatchResult res;
+            std::string label="MCTS vs "+opp;
+            if(opp=="random")  res=play<RandomBot>(evalGames,mctsIters,label.c_str());
+            else if(opp=="greedy") res=play<GreedyBot>(evalGames,mctsIters,label.c_str());
+            else {
+                std::cerr<<"Unknown opponent "<<opp<<"\n";
+                continue;
+            }
+            int total=res.mctsWins+res.oppWins;
+            double pct=100.0*res.mctsWins/total;
+            std::cout<<label<<" ("<<mctsIters<<" iters): "<<pct<<"%\n";
+        }
+    }
+    else {
+        std::cerr<<"Please specify --mode train|evaluate\n";
+        return 1;
+    }
     return 0;
 }

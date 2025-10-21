@@ -18,7 +18,7 @@ namespace secret_hitler
             Enacting,
             VetoVoting,
             Execution
-        } phase;
+        };
         enum SpecialWin
         {
             None,
@@ -65,10 +65,11 @@ namespace secret_hitler
         int getNextPresident() const { return m_nextPresident; }
         int getNominee() const { return m_nominee; }
 
-        void setRoles(const std::array<Role,5> &newRoles) {
+        void setRoles(const std::array<Role, 5> &newRoles)
+        {
             m_roles = newRoles;
-          }
-        
+        }
+        void setRole(int seat, Role r) { m_roles[seat] = r; }
         std::vector<Action> getLegalActions() const;
         void apply(const Action &a, std::mt19937 &rng);
     };

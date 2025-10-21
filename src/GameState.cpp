@@ -7,7 +7,7 @@ namespace secret_hitler
 
     GameState::GameState(std::mt19937 &rng)
     {
-        std::array<Role, 5> r = {Role::Hitler, Role::Fascist, Role::Liberal, Role::Liberal, Role::Liberal};
+        std::array<Role, 5> r = {Role::Liberal, Role::Liberal, Role::Liberal, Role::Hitler, Role::Fascist};
         std::shuffle(r.begin(), r.end(), rng);
         m_roles = r;
 
@@ -29,6 +29,19 @@ namespace secret_hitler
             return true;
         if (m_enactedFascist >= 6)
             return true;
+        int aliveL = 0, aliveF = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            if (!m_alive[i])
+                continue;
+            if (m_roles[i] == Role::Liberal)
+                ++aliveL;
+            else
+                ++aliveF;
+        }
+        if (aliveF > aliveL)
+            return true;
+
         return false;
     }
 
@@ -42,6 +55,18 @@ namespace secret_hitler
             return -1;
         if (m_enactedLiberal >= 5)
             return +1;
+        int aliveL = 0, aliveF = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            if (!m_alive[i])
+                continue;
+            if (m_roles[i] == Role::Liberal)
+                ++aliveL;
+            else
+                ++aliveF;
+        }
+        if (aliveF > aliveL)
+            return -1;
         return 0;
     }
 
@@ -179,7 +204,7 @@ namespace secret_hitler
                         if (v.second)
                             ++yes;
 
-                    if (yes >= 3)
+                    if (yes >= (double)(aliveCount + 1) / 2)
                     {
                         m_lastChancellor = m_nominee;
                         if (m_enactedFascist >= 3 && m_roles[m_nominee] == Role::Hitler)
