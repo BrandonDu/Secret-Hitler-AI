@@ -127,20 +127,6 @@ namespace secret_hitler
                         }
                         continue;
                     }
-                    auto phi = extractEnactFeatures(sim);
-                    double pF = computeEnactFascistProb(phi, roles[actor]);
-
-                    bool chooseF = std::bernoulli_distribution(pF)(rng);
-
-                    for (auto &ac : acts)
-                    {
-                        Policy c = sim.getDrawBuf()[ac.index];
-                        if ((c == Policy::Fascist) == chooseF)
-                        {
-                            sim.apply(ac, rng);
-                            break;
-                        }
-                    }
                 }
                 else if (acts[0].type == ActionType::DrawDiscard)
                 {

@@ -1,5 +1,6 @@
 
 #include "Test.hpp"
+#include <iostream>
 
 namespace secret_hitler
 {

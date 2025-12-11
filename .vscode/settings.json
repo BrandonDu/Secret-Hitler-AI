@@ -49,6 +49,10 @@
         "vector": "cpp",
         "algorithm": "cpp",
         "sstream": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "charconv": "cpp",
+        "forward_list": "cpp",
+        "iomanip": "cpp",
+        "memory": "cpp"
     }
 }

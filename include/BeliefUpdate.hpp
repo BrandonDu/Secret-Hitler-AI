@@ -49,5 +49,4 @@ namespace secret_hitler
             return 0.0;
         }
     }
-
 }
