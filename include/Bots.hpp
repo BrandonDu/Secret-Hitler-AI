@@ -83,10 +83,8 @@ namespace secret_hitler
 
   class RandomBot
   {
-  private:
-    int idx;
   public:
-    RandomBot(int index) : idx(index) {}
+    RandomBot(int index) { (void)index; }
     Action act(GameState &gs)
     {
       auto acts = gs.getLegalActions();
